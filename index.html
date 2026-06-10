@@ -224,6 +224,7 @@
     .tag {
       display: inline-flex;
       align-items: center;
+      gap: 7px;
       min-height: 30px;
       padding: 6px 10px;
       border-radius: 999px;
@@ -231,6 +232,25 @@
       background: rgba(255, 240, 247, 0.92);
       border: 1px solid var(--tag-line);
       font-size: 13px;
+    }
+
+    .remove-tag {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, #ff78ae, #ffc1da);
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(232, 91, 153, 0.18);
+      transition: transform 160ms ease;
+    }
+
+    .remove-tag:hover {
+      transform: scale(1.12);
     }
 
     button,
@@ -1066,8 +1086,26 @@
       return tag;
     }
 
-    function renderTags(container, list) {
-      container.replaceChildren(...list.map(createTag));
+    function createEditableTag(text, onDelete) {
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      const label = document.createElement("span");
+      label.textContent = text;
+      const removeButton = document.createElement("button");
+      removeButton.className = "remove-tag";
+      removeButton.type = "button";
+      removeButton.textContent = "×";
+      removeButton.setAttribute("aria-label", `删除${text}`);
+      removeButton.addEventListener("click", () => onDelete(text));
+      tag.append(label, removeButton);
+      return tag;
+    }
+
+    function renderTags(container, list, onDelete) {
+      const tags = onDelete
+        ? list.map((item) => createEditableTag(item, onDelete))
+        : list.map(createTag);
+      container.replaceChildren(...tags);
     }
 
     function setActiveButton(container, value) {
@@ -1137,6 +1175,67 @@
         }
       });
       return added;
+    }
+
+    function removeItemFromList(list, item) {
+      if (list.length <= 1) {
+        return false;
+      }
+      const index = list.indexOf(item);
+      if (index === -1) {
+        return false;
+      }
+      list.splice(index, 1);
+      saveMenus();
+      return true;
+    }
+
+    function removeFromCuisine(item) {
+      const removed = removeItemFromList(cuisineMenus[state.cuisine], item);
+      renderCuisinePreview();
+      elements.cuisineMeta.textContent = removed
+        ? `已从${state.cuisine}删除：${item}`
+        : "每个菜系至少要保留 1 个菜品。";
+    }
+
+    function removeFromDaily(item) {
+      const removed = removeItemFromList(dailyMenus[state.daily], item);
+      renderDailyPreview();
+      elements.dailyMeta.textContent = removed
+        ? `已从${state.daily}删除：${item}`
+        : "每个简餐分类至少要保留 1 个选项。";
+    }
+
+    function removeFromDrink(item) {
+      const removed = removeItemFromList(drinkMenus[state.drink], item);
+      renderDrinkPreview();
+      elements.drinkMeta.textContent = removed
+        ? `已从${state.drink}删除：${item}`
+        : "每个饮品品牌至少要保留 1 个饮品。";
+    }
+
+    function removeFromSoup(item) {
+      const removed = removeItemFromList(soupMenus, item);
+      renderSoupPreview();
+      elements.soupMeta.textContent = removed
+        ? `已删除汤品：${item}`
+        : "汤品列表至少要保留 1 个选项。";
+    }
+
+    function renderCuisinePreview() {
+      renderTags(elements.cuisinePreview, cuisineMenus[state.cuisine], removeFromCuisine);
+    }
+
+    function renderDailyPreview() {
+      renderTags(elements.dailyPreview, dailyMenus[state.daily], removeFromDaily);
+    }
+
+    function renderDrinkPreview() {
+      renderTags(elements.drinkPreview, drinkMenus[state.drink], removeFromDrink);
+    }
+
+    function renderSoupPreview() {
+      renderTags(elements.soupPreview, soupMenus, removeFromSoup);
     }
 
     function saveMenus() {
@@ -1353,12 +1452,12 @@
         state.cuisine = randomItem(Object.keys(cuisineMenus));
         setActiveButton(elements.cuisineButtons, state.cuisine);
         elements.cuisineHint.textContent = `当前菜系：${state.cuisine}`;
-        renderTags(elements.cuisinePreview, cuisineMenus[state.cuisine]);
+        renderCuisinePreview();
         drawCuisine();
       } else {
         state.daily = randomItem(Object.keys(dailyMenus));
         setActiveButton(elements.dailyButtons, state.daily);
-        renderTags(elements.dailyPreview, dailyMenus[state.daily]);
+        renderDailyPreview();
         drawDaily();
       }
     }
@@ -1368,7 +1467,7 @@
       const added = addUniqueItems(cuisineMenus[state.cuisine], items);
       elements.cuisineInput.value = "";
       saveMenus();
-      renderTags(elements.cuisinePreview, cuisineMenus[state.cuisine]);
+      renderCuisinePreview();
       elements.cuisineMeta.textContent = added.length
         ? `已添加到${state.cuisine}：${added.join("、")}`
         : "没有新增菜品，可能为空或已经存在。";
@@ -1379,7 +1478,7 @@
       const added = addUniqueItems(dailyMenus[state.daily], items);
       elements.dailyInput.value = "";
       saveMenus();
-      renderTags(elements.dailyPreview, dailyMenus[state.daily]);
+      renderDailyPreview();
       elements.dailyMeta.textContent = added.length
         ? `已添加到${state.daily}：${added.join("、")}`
         : "没有新增简餐，可能为空或已经存在。";
@@ -1390,7 +1489,7 @@
       const added = addUniqueItems(drinkMenus[state.drink], items);
       elements.drinkInput.value = "";
       saveMenus();
-      renderTags(elements.drinkPreview, drinkMenus[state.drink]);
+      renderDrinkPreview();
       elements.drinkMeta.textContent = added.length
         ? `已添加到${state.drink}：${added.join("、")}`
         : "没有新增饮品，可能为空或已经存在。";
@@ -1401,7 +1500,7 @@
       const added = addUniqueItems(soupMenus, items);
       elements.soupInput.value = "";
       saveMenus();
-      renderTags(elements.soupPreview, soupMenus);
+      renderSoupPreview();
       elements.soupMeta.textContent = added.length
         ? `已添加汤品：${added.join("、")}`
         : "没有新增汤品，可能为空或已经存在。";
@@ -1437,7 +1536,7 @@
         setActiveButton(elements.cuisineButtons, value);
         elements.cuisineHint.textContent = `当前菜系：${value}`;
         elements.cuisineMeta.textContent = `已切换到${value}，点击按钮开始抽取。`;
-        renderTags(elements.cuisinePreview, cuisineMenus[value]);
+        renderCuisinePreview();
         renderVisual(elements.cuisineVisual, cuisineMenus[value], randomItem(cuisineMenus[value]));
       });
 
@@ -1445,7 +1544,7 @@
         state.daily = value;
         setActiveButton(elements.dailyButtons, value);
         elements.dailyMeta.textContent = `当前分类：${value}`;
-        renderTags(elements.dailyPreview, dailyMenus[value]);
+        renderDailyPreview();
         renderVisual(elements.dailyVisual, dailyMenus[value], randomItem(dailyMenus[value]));
       });
 
@@ -1453,17 +1552,17 @@
         state.drink = value;
         setActiveButton(elements.drinkButtons, value);
         elements.drinkMeta.textContent = `当前品牌：${value}`;
-        renderTags(elements.drinkPreview, drinkMenus[value]);
+        renderDrinkPreview();
         renderVisual(elements.drinkVisual, drinkMenus[value], randomItem(drinkMenus[value]));
       });
 
       setActiveButton(elements.cuisineButtons, state.cuisine);
       setActiveButton(elements.dailyButtons, state.daily);
       setActiveButton(elements.drinkButtons, state.drink);
-      renderTags(elements.cuisinePreview, cuisineMenus[state.cuisine]);
-      renderTags(elements.dailyPreview, dailyMenus[state.daily]);
-      renderTags(elements.drinkPreview, drinkMenus[state.drink]);
-      renderTags(elements.soupPreview, soupMenus);
+      renderCuisinePreview();
+      renderDailyPreview();
+      renderDrinkPreview();
+      renderSoupPreview();
       renderHistory();
       setMode(state.mode);
 
