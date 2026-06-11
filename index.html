@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -824,13 +824,45 @@
 
     <div class="layout">
       <div class="main-column">
+        <section class="section" aria-labelledby="breakfastTitle">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title" id="breakfastTitle">早餐区</h2>
+              <p class="section-note">中式早茶、粥粉面点、三明治咖啡、轻食早餐都放在这里。</p>
+            </div>
+            <span class="section-index">1</span>
+          </div>
+          <div class="section-body">
+            <div class="chooser-grid" id="breakfastButtons"></div>
+
+            <div class="custom-row">
+              <input id="breakfastInput" type="text" placeholder="添加到当前早餐分类，多个早餐用逗号分隔">
+              <button class="action-btn secondary" id="addBreakfastBtn" type="button">添加早餐</button>
+            </div>
+
+            <div class="toolbar">
+              <button class="action-btn" id="drawBreakfastBtn" type="button">抽取当前早餐</button>
+              <button class="action-btn secondary" id="drawBreakfastAllBtn" type="button">早餐全分类随机</button>
+            </div>
+
+            <div class="result-box" id="breakfastResultBox" aria-live="polite">
+              <div class="visual-stage" id="breakfastVisual"></div>
+              <span class="result-label">早餐结果</span>
+              <strong class="result-main" id="breakfastResult">等待抽签</strong>
+              <span class="result-meta" id="breakfastMeta">当前分类：中式早餐</span>
+            </div>
+
+            <div class="food-list" id="breakfastPreview"></div>
+          </div>
+        </section>
+
         <section class="section" aria-labelledby="cuisineTitle">
           <div class="section-head">
             <div>
               <h2 class="section-title" id="cuisineTitle">地方菜系点菜区</h2>
               <p class="section-note">选择一个菜系，随机抽取该菜系的一道菜。</p>
             </div>
-            <span class="section-index">1</span>
+            <span class="section-index">2</span>
           </div>
           <div class="section-body">
             <div class="chooser-grid" id="cuisineButtons"></div>
@@ -862,7 +894,7 @@
               <h2 class="section-title" id="dailyTitle">日常简餐区</h2>
               <p class="section-note">街边小吃、快餐、速食和家常饭面都放在这里。</p>
             </div>
-            <span class="section-index">2</span>
+            <span class="section-index">3</span>
           </div>
           <div class="section-body">
             <div class="chooser-grid" id="dailyButtons"></div>
@@ -894,7 +926,7 @@
               <h2 class="section-title" id="drinkTitle">奶茶咖啡饮品区</h2>
               <p class="section-note">主流奶茶店、咖啡店饮品集中抽签，适合饭后或下午茶。</p>
             </div>
-            <span class="section-index">3</span>
+            <span class="section-index">4</span>
           </div>
           <div class="section-body">
             <div class="chooser-grid" id="drinkButtons"></div>
@@ -927,7 +959,7 @@
             <h2 class="section-title" id="soupTitle">汤品专区</h2>
             <p class="section-note">单独抽一款汤，搭配正餐更完整。</p>
           </div>
-          <span class="section-index">4</span>
+          <span class="section-index">5</span>
         </div>
         <div class="section-body soup-showcase">
           <div class="custom-row">
@@ -964,6 +996,14 @@
 
   <script>
     // 默认菜单。新增内容会写入 localStorage，仍然是纯前端单文件运行。
+    const defaultBreakfastMenus = {
+      "中式早餐": ["豆浆油条", "小笼包", "煎饼果子", "鸡蛋灌饼", "烧麦", "茶叶蛋配粥", "肠粉", "锅贴"],
+      "粥粉面点": ["皮蛋瘦肉粥", "艇仔粥", "热干面", "重庆小面", "云吞面", "汤粉", "葱油拌面", "鲜肉馄饨"],
+      "西式早餐": ["培根煎蛋", "牛角包", "火腿芝士三明治", "全麦吐司", "班尼迪克蛋", "华夫饼", "贝果", "酸奶麦片"],
+      "轻食早餐": ["牛油果吐司", "鸡胸肉沙拉", "水果酸奶碗", "燕麦粥", "玉米鸡蛋杯", "紫薯牛奶", "低脂三明治", "蔬菜蛋卷"],
+      "快手早餐": ["饭团", "便利店三明治", "包子配豆浆", "速冻蒸饺", "手抓饼", "即食燕麦", "牛奶面包", "香蕉酸奶"]
+    };
+
     const defaultCuisineMenus = {
       "粤菜": ["白切鸡", "烧鹅", "蜜汁叉烧", "豉汁蒸排骨", "清蒸鲈鱼", "干炒牛河", "虾饺", "啫啫鸡煲"],
       "鲁菜": ["九转大肠", "糖醋鲤鱼", "葱烧海参", "德州扒鸡", "锅塌豆腐", "油爆双脆", "四喜丸子", "爆炒腰花"],
@@ -1005,6 +1045,7 @@
     };
 
     const storageKeys = {
+      breakfast: "foodDrawBreakfastMenus",
       cuisine: "foodDrawCuisineMenus",
       daily: "foodDrawDailyMenus",
       soup: "foodDrawSoupMenus",
@@ -1024,12 +1065,14 @@
       }
     }
 
+    let breakfastMenus = loadStore(storageKeys.breakfast, defaultBreakfastMenus);
     let cuisineMenus = loadStore(storageKeys.cuisine, defaultCuisineMenus);
     let dailyMenus = loadStore(storageKeys.daily, defaultDailyMenus);
     let soupMenus = loadStore(storageKeys.soup, defaultSoupMenus);
     let drinkMenus = loadStore(storageKeys.drink, defaultDrinkMenus);
 
     const state = {
+      breakfast: Object.keys(breakfastMenus)[0],
       cuisine: Object.keys(cuisineMenus)[0],
       daily: Object.keys(dailyMenus)[0],
       drink: Object.keys(drinkMenus)[0],
@@ -1039,13 +1082,19 @@
     };
 
     const elements = {
+      breakfastButtons: $("#breakfastButtons"),
       cuisineButtons: $("#cuisineButtons"),
       dailyButtons: $("#dailyButtons"),
       drinkButtons: $("#drinkButtons"),
+      breakfastPreview: $("#breakfastPreview"),
       cuisinePreview: $("#cuisinePreview"),
       dailyPreview: $("#dailyPreview"),
       drinkPreview: $("#drinkPreview"),
       soupPreview: $("#soupPreview"),
+      breakfastResult: $("#breakfastResult"),
+      breakfastMeta: $("#breakfastMeta"),
+      breakfastResultBox: $("#breakfastResultBox"),
+      breakfastVisual: $("#breakfastVisual"),
       cuisineHint: $("#cuisineHint"),
       cuisineResult: $("#cuisineResult"),
       cuisineMeta: $("#cuisineMeta"),
@@ -1064,6 +1113,7 @@
       soupResultBox: $("#soupResultBox"),
       soupVisual: $("#soupVisual"),
       historyList: $("#historyList"),
+      breakfastInput: $("#breakfastInput"),
       cuisineInput: $("#cuisineInput"),
       dailyInput: $("#dailyInput"),
       drinkInput: $("#drinkInput"),
@@ -1190,6 +1240,14 @@
       return true;
     }
 
+    function removeFromBreakfast(item) {
+      const removed = removeItemFromList(breakfastMenus[state.breakfast], item);
+      renderBreakfastPreview();
+      elements.breakfastMeta.textContent = removed
+        ? `已从${state.breakfast}删除：${item}`
+        : "每个早餐分类至少要保留 1 个选项。";
+    }
+
     function removeFromCuisine(item) {
       const removed = removeItemFromList(cuisineMenus[state.cuisine], item);
       renderCuisinePreview();
@@ -1222,6 +1280,10 @@
         : "汤品列表至少要保留 1 个选项。";
     }
 
+    function renderBreakfastPreview() {
+      renderTags(elements.breakfastPreview, breakfastMenus[state.breakfast], removeFromBreakfast);
+    }
+
     function renderCuisinePreview() {
       renderTags(elements.cuisinePreview, cuisineMenus[state.cuisine], removeFromCuisine);
     }
@@ -1239,6 +1301,7 @@
     }
 
     function saveMenus() {
+      localStorage.setItem(storageKeys.breakfast, JSON.stringify(breakfastMenus));
       localStorage.setItem(storageKeys.cuisine, JSON.stringify(cuisineMenus));
       localStorage.setItem(storageKeys.daily, JSON.stringify(dailyMenus));
       localStorage.setItem(storageKeys.soup, JSON.stringify(soupMenus));
@@ -1373,6 +1436,25 @@
       }, 76);
     }
 
+    function drawBreakfast(useAll = false) {
+      const sourceList = useAll ? Object.values(breakfastMenus).flat() : breakfastMenus[state.breakfast];
+      const label = useAll ? "早餐全分类" : state.breakfast;
+      drawWithEffect({
+        list: sourceList,
+        target: elements.breakfastResult,
+        box: elements.breakfastResultBox,
+        stage: elements.breakfastVisual,
+        onStart: () => {
+          elements.breakfastMeta.textContent = `${label}正在抽签中...`;
+        },
+        onFinish: (dish) => {
+          elements.breakfastMeta.textContent = `分类：${label}`;
+          addHistory(`${label}：${dish}`);
+          showPrizeModal(`${label}抽签结果`, dish, "今天从一份暖暖早餐开始。");
+        }
+      });
+    }
+
     function drawCuisine() {
       const list = cuisineMenus[state.cuisine];
       drawWithEffect({
@@ -1448,7 +1530,13 @@
     }
 
     function drawFullMeal() {
-      if (Math.random() > 0.45) {
+      const mealType = randomItem(["breakfast", "cuisine", "daily"]);
+      if (mealType === "breakfast") {
+        state.breakfast = randomItem(Object.keys(breakfastMenus));
+        setActiveButton(elements.breakfastButtons, state.breakfast);
+        renderBreakfastPreview();
+        drawBreakfast();
+      } else if (mealType === "cuisine") {
         state.cuisine = randomItem(Object.keys(cuisineMenus));
         setActiveButton(elements.cuisineButtons, state.cuisine);
         elements.cuisineHint.textContent = `当前菜系：${state.cuisine}`;
@@ -1460,6 +1548,17 @@
         renderDailyPreview();
         drawDaily();
       }
+    }
+
+    function addToBreakfast() {
+      const items = parseItems(elements.breakfastInput.value);
+      const added = addUniqueItems(breakfastMenus[state.breakfast], items);
+      elements.breakfastInput.value = "";
+      saveMenus();
+      renderBreakfastPreview();
+      elements.breakfastMeta.textContent = added.length
+        ? `已添加到${state.breakfast}：${added.join("、")}`
+        : "没有新增早餐，可能为空或已经存在。";
     }
 
     function addToCuisine() {
@@ -1512,6 +1611,9 @@
       document.querySelectorAll(".mode-btn").forEach((button) => {
         button.classList.toggle("active", button.dataset.mode === mode);
       });
+      const breakfastValue = breakfastMenus[state.breakfast].includes(elements.breakfastResult.textContent)
+        ? elements.breakfastResult.textContent
+        : randomItem(breakfastMenus[state.breakfast]);
       const cuisineValue = cuisineMenus[state.cuisine].includes(elements.cuisineResult.textContent)
         ? elements.cuisineResult.textContent
         : randomItem(cuisineMenus[state.cuisine]);
@@ -1524,6 +1626,7 @@
       const soupValue = soupMenus.includes(elements.soupResult.textContent)
         ? elements.soupResult.textContent
         : randomItem(soupMenus);
+      renderVisual(elements.breakfastVisual, breakfastMenus[state.breakfast], breakfastValue);
       renderVisual(elements.cuisineVisual, cuisineMenus[state.cuisine], cuisineValue);
       renderVisual(elements.dailyVisual, dailyMenus[state.daily], dailyValue);
       renderVisual(elements.drinkVisual, drinkMenus[state.drink], drinkValue);
@@ -1531,6 +1634,14 @@
     }
 
     function init() {
+      buildChoiceButtons(elements.breakfastButtons, breakfastMenus, (value) => {
+        state.breakfast = value;
+        setActiveButton(elements.breakfastButtons, value);
+        elements.breakfastMeta.textContent = `当前分类：${value}`;
+        renderBreakfastPreview();
+        renderVisual(elements.breakfastVisual, breakfastMenus[value], randomItem(breakfastMenus[value]));
+      });
+
       buildChoiceButtons(elements.cuisineButtons, cuisineMenus, (value) => {
         state.cuisine = value;
         setActiveButton(elements.cuisineButtons, value);
@@ -1556,9 +1667,11 @@
         renderVisual(elements.drinkVisual, drinkMenus[value], randomItem(drinkMenus[value]));
       });
 
+      setActiveButton(elements.breakfastButtons, state.breakfast);
       setActiveButton(elements.cuisineButtons, state.cuisine);
       setActiveButton(elements.dailyButtons, state.daily);
       setActiveButton(elements.drinkButtons, state.drink);
+      renderBreakfastPreview();
       renderCuisinePreview();
       renderDailyPreview();
       renderDrinkPreview();
@@ -1566,6 +1679,8 @@
       renderHistory();
       setMode(state.mode);
 
+      $("#drawBreakfastBtn").addEventListener("click", () => drawBreakfast(false));
+      $("#drawBreakfastAllBtn").addEventListener("click", () => drawBreakfast(true));
       $("#drawCuisineBtn").addEventListener("click", drawCuisine);
       $("#drawDailyBtn").addEventListener("click", () => drawDaily(false));
       $("#drawDailyAllBtn").addEventListener("click", () => drawDaily(true));
@@ -1578,10 +1693,12 @@
         renderHistory();
       });
 
+      $("#addBreakfastBtn").addEventListener("click", addToBreakfast);
       $("#addCuisineBtn").addEventListener("click", addToCuisine);
       $("#addDailyBtn").addEventListener("click", addToDaily);
       $("#addDrinkBtn").addEventListener("click", addToDrink);
       $("#addSoupBtn").addEventListener("click", addToSoup);
+      elements.breakfastInput.addEventListener("keydown", (event) => event.key === "Enter" && addToBreakfast());
       elements.cuisineInput.addEventListener("keydown", (event) => event.key === "Enter" && addToCuisine());
       elements.dailyInput.addEventListener("keydown", (event) => event.key === "Enter" && addToDaily());
       elements.drinkInput.addEventListener("keydown", (event) => event.key === "Enter" && addToDrink());
@@ -1602,3 +1719,4 @@
   </script>
 </body>
 </html>
+
