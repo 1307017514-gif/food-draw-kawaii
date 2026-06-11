@@ -817,7 +817,6 @@
           <button class="mode-btn" type="button" data-mode="cards">翻牌</button>
           <button class="mode-btn" type="button" data-mode="roll">滚动</button>
         </div>
-        <button class="action-btn secondary" id="randomMealBtn" type="button">随机一顿正餐</button>
         <button class="action-btn" id="clearHistoryBtn" type="button">清空记录</button>
       </div>
     </header>
@@ -827,7 +826,7 @@
         <section class="section" aria-labelledby="breakfastTitle">
           <div class="section-head">
             <div>
-              <h2 class="section-title" id="breakfastTitle">早餐区</h2>
+              <h2 class="section-title" id="breakfastTitle">早上多少吃点</h2>
               <p class="section-note">中式早茶、粥粉面点、三明治咖啡、轻食早餐都放在这里。</p>
             </div>
             <span class="section-index">1</span>
@@ -892,7 +891,7 @@
           <div class="section-head">
             <div>
               <h2 class="section-title" id="dailyTitle">日常简餐区</h2>
-              <p class="section-note">街边小吃、快餐、速食和家常饭面都放在这里。</p>
+              <p class="section-note">快餐、速食和家常饭面等日常餐食都放在这里。</p>
             </div>
             <span class="section-index">3</span>
           </div>
@@ -913,7 +912,7 @@
               <div class="visual-stage" id="dailyVisual"></div>
               <span class="result-label">简餐结果</span>
               <strong class="result-main" id="dailyResult">等待抽签</strong>
-              <span class="result-meta" id="dailyMeta">当前分类：街边小吃</span>
+              <span class="result-meta" id="dailyMeta">当前分类：快餐</span>
             </div>
 
             <div class="food-list" id="dailyPreview"></div>
@@ -923,7 +922,7 @@
         <section class="section" aria-labelledby="drinkTitle">
           <div class="section-head">
             <div>
-              <h2 class="section-title" id="drinkTitle">奶茶咖啡饮品区</h2>
+              <h2 class="section-title" id="drinkTitle">来一杯吧~</h2>
               <p class="section-note">主流奶茶店、咖啡店饮品集中抽签，适合饭后或下午茶。</p>
             </div>
             <span class="section-index">4</span>
@@ -1016,7 +1015,6 @@
     };
 
     const defaultDailyMenus = {
-      "街边小吃": ["煎饼果子", "烤冷面", "肉夹馍", "鸡蛋灌饼", "手抓饼", "关东煮", "炸串", "章鱼小丸子"],
       "快餐": ["黄焖鸡米饭", "猪脚饭", "盖浇饭", "卤肉饭", "汉堡套餐", "炸鸡饭", "轻食沙拉", "便当拼盘"],
       "泡面速食": ["红烧牛肉面", "酸辣粉", "螺蛳粉", "自热火锅", "火鸡面", "麻辣烫速食", "拌面", "乌冬面"],
       "家常饭面": ["蛋炒饭", "番茄鸡蛋面", "青椒肉丝饭", "肉末茄子饭", "牛肉炒面", "葱油拌面", "炒河粉", "饺子"],
@@ -1070,6 +1068,10 @@
     let dailyMenus = loadStore(storageKeys.daily, defaultDailyMenus);
     let soupMenus = loadStore(storageKeys.soup, defaultSoupMenus);
     let drinkMenus = loadStore(storageKeys.drink, defaultDrinkMenus);
+    delete dailyMenus["街边小吃"];
+    if (!Object.keys(dailyMenus).length) {
+      dailyMenus = clone(defaultDailyMenus);
+    }
 
     const state = {
       breakfast: Object.keys(breakfastMenus)[0],
@@ -1529,27 +1531,6 @@
       });
     }
 
-    function drawFullMeal() {
-      const mealType = randomItem(["breakfast", "cuisine", "daily"]);
-      if (mealType === "breakfast") {
-        state.breakfast = randomItem(Object.keys(breakfastMenus));
-        setActiveButton(elements.breakfastButtons, state.breakfast);
-        renderBreakfastPreview();
-        drawBreakfast();
-      } else if (mealType === "cuisine") {
-        state.cuisine = randomItem(Object.keys(cuisineMenus));
-        setActiveButton(elements.cuisineButtons, state.cuisine);
-        elements.cuisineHint.textContent = `当前菜系：${state.cuisine}`;
-        renderCuisinePreview();
-        drawCuisine();
-      } else {
-        state.daily = randomItem(Object.keys(dailyMenus));
-        setActiveButton(elements.dailyButtons, state.daily);
-        renderDailyPreview();
-        drawDaily();
-      }
-    }
-
     function addToBreakfast() {
       const items = parseItems(elements.breakfastInput.value);
       const added = addUniqueItems(breakfastMenus[state.breakfast], items);
@@ -1687,7 +1668,6 @@
       $("#drawDrinkBtn").addEventListener("click", () => drawDrink(false));
       $("#drawDrinkAllBtn").addEventListener("click", () => drawDrink(true));
       $("#drawSoupBtn").addEventListener("click", drawSoup);
-      $("#randomMealBtn").addEventListener("click", drawFullMeal);
       $("#clearHistoryBtn").addEventListener("click", () => {
         state.history = [];
         renderHistory();
